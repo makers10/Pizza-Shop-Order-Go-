@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <title>Admin Dashboard</title>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <nav class="bg-white shadow-sm border-b">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16 items-center">
+                <div class="flex-shrink-0 flex items-center">
+                    <span class="text-2xl font-bold text-gray-800">🍕 Pizza Admin</span>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <span class="text-gray-600">Welcome, {{.Username}}</span>
+                    <form action="/logout" method="POST" class="inline">
+                        <button type="submit" class="text-red-500 hover:text-red-700 font-medium">Logout</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+        <div class="px-4 py-6 sm:px-0">
+            <h1 class="text-3xl font-bold text-gray-900 mb-8">Active Orders</h1>
+            
+            <div class="bg-white shadow overflow-hidden sm:rounded-lg">
+                <ul class="divide-y divide-gray-200">
+                    {{range .Orders}}
+                    <li class="p-6">
+                        <div class="flex items-center justify-between">
+                            <div class="flex-1">
+                                <div class="flex items-center space-x-3">
+                                    <h3 class="text-lg font-medium text-gray-900">
+                                        Order #{{.ID}} - {{.CustomerName}}
+                                    </h3>
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 time-elapsed" data-created-at="{{.CreatedAt.Format "2006-01-02T15:04:05Z07:00"}}">
+                                        Calculating time...
+                                    </span>
+                                </div>
+                                <div class="mt-2 text-sm text-gray-500">
+                                    <p>Phone: {{.Phone}}</p>
+                                    <p>Address: {{.Address}}</p>
+                                    <div class="mt-2">
+                                        <strong>Items:</strong>
+                                        <ul class="list-disc list-inside mt-1">
+                                            {{range .Items}}
+                                            <li>{{.Size}} {{.Pizza}} {{if .Instructions}}(Note: {{.Instructions}}){{end}}</li>
+                                            {{end}}
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="ml-6">
+                                <form action="/admin/order/{{.ID}}/update" method="POST" class="flex items-center space-x-2">
+                                    <select name="status" class="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm rounded-md border">
+                                        {{$currentStatus := .Status}}
+                                        {{range $.Statuses}}
+                                            <option value="{{.}}" {{if eq . $currentStatus}}selected{{end}}>{{.}}</option>
+                                        {{end}}
+                                    </select>
+                                    <button type="submit" class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-emerald-600 hover:bg-emerald-700">
+                                        Update
+                                    </button>
+                                </form>
+                                <form action="/admin/order/{{.ID}}/delete" method="POST" class="mt-2 flex justify-end">
+                                    <button type="submit" class="text-sm text-red-600 hover:text-red-900" onclick="return confirm('Are you sure you want to delete this order?');">Delete</button>
+                                </form>
+                            </div>
+                        </div>
+                    </li>
+                    {{else}}
+                    <li class="p-6 text-center text-gray-500">No active orders</li>
+                    {{end}}
+                </ul>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        function updateTimers() {
+            document.querySelectorAll('.time-elapsed').forEach(el => {
+                const createdAtStr = el.getAttribute('data-created-at');
+                if (!createdAtStr) return;
+                
+                const createdAt = new Date(createdAtStr);
+                const now = new Date();
+                const diffMs = now - createdAt;
+                
+                if (diffMs < 0) {
+                    el.textContent = "Just placed";
+                    return;
+                }
+                
+                const diffMins = Math.floor(diffMs / 60000);
+                const diffSecs = Math.floor((diffMs % 60000) / 1000);
+                
+                if (diffMins === 0) {
+                    el.textContent = `Elapsed: ${diffSecs}s`;
+                } else {
+                    el.textContent = `Elapsed: ${diffMins}m ${diffSecs}s`;
+                }
+            });
+        }
+        
+        // Update immediately, then every second
+        updateTimers();
+        setInterval(updateTimers, 1000);
+    </script>
+</body>
+</html>

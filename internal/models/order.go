@@ -1,75 +1,91 @@
 package models
 
 import (
-    "gorm.io/gorm"
-    "github.com/teris-io/shortid"
-)
+	"time"
 
+	"github.com/teris-io/shortid"
+	"gorm.io/gorm"
+)
 
 var (
 	OrderStatuses = []string{"Order placed", "Preparing", "Baking", "Quality Check", "Ready"}
-	PizzaTypes    = []string{
+
+	PizzaTypes = []string{
 		"Margherita",
 		"Pepperoni",
-		"BBQ Chicken",
-		"Veggie",
+		"Vegetarian",
 		"Hawaiian",
+		"Bbq Chicken",
 		"Meat Lovers",
-		"Supreme",
 		"Buffalo Chicken",
-		"Four Cheese",
-		"Spinach and Feta",
-		"Mediterranean",
-		"White Pizza",
-		"Philly Cheesesteak",
+		"Supreme",
 		"Truffle Mushroom",
-		"Caprese",
-		"Breakfast Pizza",
+		"Four Cheese",
 	}
+
 	PizzaSizes = []string{
-		"Small",
-		"Medium",
-		"Large",
-		"Extra Large",
+		"Small", "Medium", "Large", "X-Large",
 	}
 )
 
 type OrderModel struct {
 	DB *gorm.DB
 }
+
 type Order struct {
-	ID           string      `json:"id" gorm:"primaryKey;size:14"`
-	Status       string      `json:"status" gorm:"not null"`
-	CustomerName string      `json:"customer_name" gorm:"not null"`
-	Phone        string      `json:"phone" gorm:"not null"`
-	Address      string      `json:"address" gorm:"not null"`
-	Items        []OrderItem `json:"pizzas" gorm:"foreignKey:OrderID;"`
-	CreatedAt    int64       `json:"created_at" gorm:"autoCreateTime"`
+	ID           string      `gorm:"primaryKey;size:14" json:"id"`
+	Status       string      `gorm:"not null" json:"status"`
+	CustomerName string      `gorm:"not null" json:"customerName"`
+	Phone        string      `gorm:"not null" json:"phone"`
+	Address      string      `gorm:"not null" json:"address"`
+	Items        []OrderItem `gorm:"foreignKey:OrderID" json:"pizzas"`
+	CreatedAt    time.Time   `json:"createdAt"`
 }
+
 type OrderItem struct {
-	ID           string `json:"id" gorm:"primaryKey;size:14"`
-	OrderID      string `json:"order_id" gorm:"index"`
-	Size         string `json:"size" gorm:"not null"`
-	Pizza        string `json:"pizza" gorm:"not null"`
+	ID           string `gorm:"primaryKey;size:14" json:"id"`
+	OrderID      string `gorm:"index;size:14;not null" json:"orderId"`
+	Size         string `gorm:"not null" json:"size"`
+	Pizza        string `gorm:"not null" json:"pizza"`
 	Instructions string `json:"instructions"`
 }
-func (o *Order) BeforeCreate(tx *gorm.DB) (err error) {
+
+func (o *Order) BeforeCreate(tx *gorm.DB) error {
 	if o.ID == "" {
 		o.ID = shortid.MustGenerate()
 	}
+
 	return nil
 }
+
 func (oi *OrderItem) BeforeCreate(tx *gorm.DB) error {
 	if oi.ID == "" {
 		oi.ID = shortid.MustGenerate()
 	}
+
 	return nil
 }
-func (o * OrderModel) CreateOrder (order *Order)error {
+
+func (o *OrderModel) CreateOrder(order *Order) error {
 	return o.DB.Create(order).Error
 }
+
 func (o *OrderModel) GetOrder(id string) (*Order, error) {
 	var order Order
 	err := o.DB.Preload("Items").First(&order, "id = ?", id).Error
 	return &order, err
+}
+
+func (o *OrderModel) GetAllOrders() ([]Order, error) {
+	var orders []Order
+	err := o.DB.Preload("Items").Order("created_at desc").Find(&orders).Error
+	return orders, err
+}
+
+func (o *OrderModel) UpdateOrderStatus(id string, status string) error {
+	return o.DB.Model(&Order{}).Where("id = ?", id).Update("status", status).Error
+}
+
+func (o *OrderModel) DeleteOrder(id string) error {
+	return o.DB.Select("Items").Delete(&Order{ID: id}).Error
 }

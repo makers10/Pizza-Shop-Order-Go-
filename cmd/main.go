@@ -2,8 +2,9 @@ package main
 
 import (
 	"log/slog"
+	"os"
 	"pizza-tracker-go/internal/models"
-    "os"
+
 	"github.com/gin-gonic/gin"
 )
 
@@ -18,7 +19,8 @@ func main() {
 		slog.Error("Failed to initialized database", "error", err)
 		os.Exit(1)
 	}
-	slog.Info("Database Initialized Successfully")
+
+	slog.Info("Database initialized successfully")
 
 	RegisterCustomValidators()
 
@@ -27,12 +29,15 @@ func main() {
 	router := gin.Default()
 
 	if err := loadTemplates(router); err != nil {
-		slog.Error("Failed to load Templates", "error", err)
+		slog.Error("Failed to load templates", "error", err)
 		os.Exit(1)
 	}
-	setupRoutes(router, h)
 
-	slog.Info("Server Starting", "url", "http://localhost:"+cfg.Port)
+	sessionStore := setupSessionStore(dbModel.DB, []byte(cfg.SessionSecretKey))
 
-	router.Run(":" +cfg.Port)
+	setupRoutes(router, h, sessionStore)
+
+	slog.Info("Server starting", "url", "http://localhost:"+cfg.Port)
+
+	router.Run(":" + cfg.Port)
 }
