@@ -1,8 +1,10 @@
 package models
 
-import
-	"gorm.io/gorm"
-	
+import (
+    "gorm.io/gorm"
+    "github.com/teris-io/shortid"
+)
+
 
 var (
 	OrderStatuses = []string{"Order placed", "Preparing", "Baking", "Quality Check", "Ready"}

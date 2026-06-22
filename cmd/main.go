@@ -32,7 +32,7 @@ func main() {
 	}
 	setupRoutes(router, h)
 
-	slog.Info()("Server Starting", "url", "http://localhost:"+cfg.Port)
+	slog.Info("Server Starting", "url", "http://localhost:"+cfg.Port)
 
 	router.Run(":" +cfg.Port)
 }

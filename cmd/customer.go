@@ -8,7 +8,7 @@ import (
 )
 
 type CustomerData struct {
-	Ttitle string
+	Title string
 	Order models.Order
 	Statuses []string
 }
@@ -54,16 +54,16 @@ func (h *Handler) HandleNewOrderPost(c *gin.Context) {
 		CustomerName : form.Name,
 		Phone:  form.Phone,
 		Address: form.Address,
-		Status: models.orderStatuses[0],
+		Status: models.OrderStatuses[0],
 		Items: orderItems,
 	}
-	if err := h.orders.CreateOrder(&order); err != nil{
+	if err := h.orders.CreateOrder(&Order); err != nil{
 		slog.Error("Failed to create order", "error", err)
 		c.String(http.StatusInternalServerError, "Something went wrong")
 		return
 	}
-	slog.Info("Order created", "orderID", order.ID, "Customer", order.CustomerName)
-	c.Redirect(http.StatusSeeOther, "/customer/"+order.ID)
+	slog.Info("Order created", "orderID", Order.ID, "Customer", Order.CustomerName)
+	c.Redirect(http.StatusSeeOther, "/customer/"+Order.ID)
 }
 func (h *Handler) serveCustomer(c *gin.Context){
 	orderID:= c.Param("id")
@@ -76,7 +76,7 @@ func (h *Handler) serveCustomer(c *gin.Context){
 		return
 	}
 	c.HTML(http.StatusOK, "customer.tmpl", CustomerData{
-		Ttitle:" PizzaOrder Status " + orderID,
+		Title:" PizzaOrder Status " + orderID,
 		Order : *order,
 		Statuses: models.OrderStatuses,
 	})
